@@ -1,0 +1,53 @@
+# Sessione e Autenticazione
+sessione/
+auth_info_baileys/
+cookies.txt
+.env
+
+# Configurazione Locale
+config.js
+
+# Database e Dati Utente (JSON)
+database.json
+media/wallet.json
+media/banca.json
+media/livelli.json
+media/inventory.json
+media/compleanni.json
+media/transazioni.json
+media/descrizioni.json
+media/genere.json
+media/lingua.json
+media/lastfm.json
+media/banned.json
+media/owners.json
+media/cooldown_lavoro.json
+media/playlists.json
+media/canzoni.json
+
+# Plugins in fase di test
+plugins/test*
+plugins/test_*.js
+funzioni/admin/test*
+
+# File Temporanei e Media
+media/tmp/
+tmp/
+*.mp4
+*.mp3
+*.jpg
+*.jpeg
+*.png
+*.webp
+
+# Moduli e Dipendenze
+node_modules/
+package-lock.json
+yarn.lock
+
+# Log e File di Sistema
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db

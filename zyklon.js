@@ -22,6 +22,7 @@ import { checkConfig } from './lib/configInit.js';
 import { setupWatcher } from './lib/watcher.js';
 import { registerAutoAccept } from './handler.js';
 import { startCleaner } from './lib/cleaner.js';
+import { startDashboard } from './api.js';
 
 process.env.NODE_NO_WARNINGS = '1';
 
@@ -203,3 +204,4 @@ async function startBot() {
 }
 
 startBot();
+startDashboard();
