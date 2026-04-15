@@ -18,6 +18,7 @@ import { pathToFileURL } from 'url';
 import handler, { initDatabase, handleStub } from "./handler.js";
 import { eventsUpdate } from "./funzioni/admin/welcome-addio.js";
 import { antinukeEvent } from "./funzioni/admin/antinuke.js";
+import { groupUpdate as permessiUpdate } from "./funzioni/admin/permessi.js";
 import { checkConfig } from './lib/configInit.js';
 import { setupWatcher } from './lib/watcher.js';
 import { registerAutoAccept } from './handler.js';
@@ -183,6 +184,7 @@ async function startBot() {
     conn.ev.on('group-participants.update', async (anu) => {
         try { await eventsUpdate(conn, anu); } catch (e) {}
         try { await antinukeEvent(conn, anu); } catch (e) {}
+        try { await permessiUpdate(conn, anu); } catch (e) {} 
     });
 
     conn.ev.on('messages.upsert', async (chatUpdate) => {
