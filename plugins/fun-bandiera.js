@@ -1,3 +1,17 @@
+import fs from 'fs'
+import path from 'path'
+
+const walletPath = path.join(process.cwd(), 'media/wallet.json')
+
+const getWallet = () => {
+    if (!fs.existsSync(walletPath)) return {}
+    try { return JSON.parse(fs.readFileSync(walletPath, 'utf-8')) } catch { return {} }
+}
+
+const saveWallet = (data) => {
+    fs.writeFileSync(walletPath, JSON.stringify(data, null, 2))
+}
+
 const flags = [
     { emoji: '🇮🇹', name: 'italia' },
     { emoji: '🇫🇷', name: 'francia' },
@@ -72,8 +86,6 @@ let handler = async (m, { conn, args, usedPrefix, command, isAdmin }) => {
             const game = conn.bandiera[m.chat]
             const guess = args.join(' ').toLowerCase().trim()
             
-            global.db.data.users[m.sender] = global.db.data.users[m.sender] || { exp: 0, money: 0 }
-
             if (guess === game.stato) {
                 clearTimeout(game.timeout)
                 
@@ -84,8 +96,15 @@ let handler = async (m, { conn, args, usedPrefix, command, isAdmin }) => {
                 const timeBonus = timeTaken <= 10 ? 20 : timeTaken <= 20 ? 10 : 0
                 xp += timeBonus
                 
+                // Aggiornamento XP nel database globale
+                global.db.data.users[m.sender] = global.db.data.users[m.sender] || { exp: 0 }
                 global.db.data.users[m.sender].exp += xp
-                global.db.data.users[m.sender].money += money
+
+                // Aggiornamento Denaro nel wallet.json
+                let wallet = getWallet()
+                if (!wallet[m.sender]) wallet[m.sender] = { money: 0, bank: 0 }
+                wallet[m.sender].money += money
+                saveWallet(wallet)
                 
                 let congratsMsg = `『 🎉 』 _Corretto! Lo stato era_ *${game.rispostaOriginale.toUpperCase()}*\n\n`
                 congratsMsg += `『 ⏱️ 』 _Tempo:_ ${timeTaken}s\n`

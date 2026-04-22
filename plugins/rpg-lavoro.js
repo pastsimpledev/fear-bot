@@ -1,15 +1,14 @@
-import axios from 'axios'
 import fs from 'fs'
+import path from 'path'
 
-const livelliPath = './media/livelli.json'
-const walletPath = './media/wallet.json'
-const cooldownPath = './media/cooldown_lavoro.json'
-const txPath = './media/transazioni.json'
-const BROWSERLESS_KEY = global.APIKeys?.browserless
+const livelliPath = path.join(process.cwd(), 'media/livelli.json')
+const walletPath = path.join(process.cwd(), 'media/wallet.json')
+const cooldownPath = path.join(process.cwd(), 'media/cooldown_lavoro.json')
+const txPath = path.join(process.cwd(), 'media/transazioni.json')
 
 const getDb = (path) => {
     if (!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify({}))
-    return JSON.parse(fs.readFileSync(path, 'utf-8'))
+    try { return JSON.parse(fs.readFileSync(path, 'utf-8')) } catch { return {} }
 }
 
 const saveDb = (path, data) => {
@@ -25,12 +24,12 @@ const formatTime = (ms) => {
 const getRandom = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
 
 const lavori = [
-    { nome: 'Spazzino', xpReq: 0, paga: [150, 300], xpGained: [10, 20], colore: '#4caf50' },
-    { nome: 'Meccanico', xpReq: 250, paga: [400, 750], xpGained: [30, 60], colore: '#ff9800' },
-    { nome: 'Programmatore', xpReq: 1000, paga: [1000, 2500], xpGained: [80, 150], colore: '#2196f3' }
+    { nome: 'Spazzino', xpReq: 0, paga: [150, 300], xpGained: [10, 20] },
+    { nome: 'Meccanico', xpReq: 250, paga: [400, 750], xpGained: [30, 60] },
+    { nome: 'Programmatore', xpReq: 1000, paga: [1000, 2500], xpGained: [80, 150] }
 ]
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
+let handler = async (m, { conn, text, usedPrefix, command, args }) => {
     const jid = m.sender
     const nomeUtente = m.pushName || 'Utente'
     
@@ -46,80 +45,71 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     const userLvl = livelliDb[jid]
 
     if (command === 'lavoro') {
-        if (!text) {
-            await conn.sendPresenceUpdate('composing', m.chat)
+        if (!args[0]) {
+            let txt = `╭┈➤ 『 💼 』 *CENTRO IMPIEGO*\n`
+            txt += `┆  『 👤 』 *UTENTE:* ${nomeUtente}\n`
+            txt += `┆  『 📊 』 *XP:* ${userLvl.xp}\n`
+            txt += `┆  『 🛠️ 』 *STATO:* ${userLvl.lavoro || 'Disoccupato'}\n`
+            txt += `┆\n`
+            txt += `┆  *LISTA PROFESSIONI:*\n`
             
-            const htmlJob = `<html><head><style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-                body { margin:0; padding:0; width:1000px; height:600px; display:flex; align-items:center; justify-content:center; background:#0f0f0f; font-family:'Inter', sans-serif; }
-                .card { width:850px; height:450px; background:#1a1a1a; border-radius:30px; border: 2px solid #a855f7; display:flex; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,0.5); }
-                .sidebar { width:250px; background:#222; display:flex; flex-direction:column; align-items:center; justify-content:center; border-right:2px solid #a855f7; }
-                .avatar { width:120px; height:120px; background:#a855f7; border-radius:50%; margin-bottom:20px; border:4px solid #444; }
-                .content { flex:1; padding:50px; display:flex; flex-direction:column; justify-content:center; }
-                .title { color:#666; text-transform:uppercase; letter-spacing:3px; font-weight:700; font-size:14px; }
-                .name { color:#fff; font-size:50px; font-weight:900; margin:10px 0; }
-                .stats { display:flex; gap:30px; margin-top:30px; }
-                .stat-box { display:flex; flex-direction:column; }
-                .stat-label { color:#555; font-size:12px; font-weight:700; text-transform:uppercase; }
-                .stat-value { color:#eee; font-size:24px; font-weight:700; }
-                .job-tag { position:absolute; top:40px; right:40px; padding:10px 20px; background:#a855f7; color:#fff; border-radius:10px; font-size:12px; font-weight:700; }
-            </style></head><body>
-                <div class="card" style="position:relative;">
-                    <div class="job-tag">CENTRO IMPIEGO</div>
-                    <div class="sidebar">
-                        <div class="avatar"></div>
-                    </div>
-                    <div class="content">
-                        <div class="title">Candidato Selezionato</div>
-                        <div class="name">${nomeUtente}</div>
-                        <div class="stats">
-                            <div class="stat-box"><div class="stat-label">Esperienza</div><div class="stat-value">${userLvl.xp} XP</div></div>
-                            <div class="stat-box"><div class="stat-label">Stato</div><div class="stat-value">${userLvl.lavoro ? 'Occupato' : 'Libero'}</div></div>
-                        </div>
-                    </div>
-                </div>
-            </body></html>`
-
-            const ss = await axios.post(`https://chrome.browserless.io/screenshot?token=${BROWSERLESS_KEY}`, {
-                html: htmlJob, viewport: { width: 1000, height: 600 }, options: { type: 'jpeg', quality: 90 }
-            }, { responseType: 'arraybuffer' })
+            lavori.forEach(l => {
+                const check = userLvl.xp >= l.xpReq ? '✅' : '❌'
+                txt += `┆  ${check} *${l.nome}* (${l.xpReq} XP)\n`
+            })
+            txt += `┆\n`
+            txt += `┆  *Clicca un bottone per scegliere!*\n`
+            txt += `╰┈➤ 『 📦 』 \`annoyed system\``
 
             const buttons = lavori.map(l => ({
-                name: 'quick_reply',
+                name: "quick_reply",
                 buttonParamsJson: JSON.stringify({ 
                     display_text: `${l.nome.toUpperCase()} (${l.xpReq} XP)`, 
                     id: `${usedPrefix}lavoro scegli ${l.nome.toLowerCase()}` 
                 })
             }))
 
-            const caption = `╭┈➤『 💼 』 \`centro impiego\`\n┆  『 👤 』 \`utente\` ─ *${nomeUtente}*\n┆  『 📊 』 \`xp attuali\` ─ *${userLvl.xp}*\n┆  『 🛠️ 』 \`lavoro attuale\` ─ *${userLvl.lavoro || 'nessuno'}*\n╰┈➤ 『 📦 』 \`seleziona una professione\``
+            const msg = {
+                viewOnceMessage: {
+                    message: {
+                        interactiveMessage: {
+                            body: { text: txt },
+                            footer: { text: "annoyed system" },
+                            nativeFlowMessage: { buttons },
+                            contextInfo: { 
+                                mentionedJid: [jid],
+                                stanzaId: "job_menu"
+                            }
+                        }
+                    }
+                }
+            }
 
-            return await conn.sendMessage(m.chat, {
-                image: Buffer.from(ss.data),
-                caption: caption,
-                interactiveButtons: buttons
-            }, { quoted: m })
+            return await conn.relayMessage(m.chat, msg, {})
         }
 
-        if (text.startsWith('scegli')) {
-            const scelta = text.replace('scegli ', '').trim().toLowerCase()
+        if (args[0] === 'scegli') {
+            const scelta = args.slice(1).join(' ').toLowerCase().trim()
             const lavoroTrovato = lavori.find(l => l.nome.toLowerCase() === scelta)
 
-            if (!lavoroTrovato) return conn.sendMessage(m.chat, { text: '❌ Lavoro non trovato.' }, { quoted: m })
-            if (userLvl.xp < lavoroTrovato.xpReq) return conn.sendMessage(m.chat, { text: `🚫 Requisiti non soddisfatti! Ti servono ${lavoroTrovato.xpReq} XP.` }, { quoted: m })
+            if (!lavoroTrovato) return m.reply('`𐔌❌꒱` Lavoro non trovato.')
+            if (userLvl.xp < lavoroTrovato.xpReq) return m.reply(`\`𐔌🚫꒱\` Requisiti insufficienti! Ti servono ${lavoroTrovato.xpReq} XP.`)
 
             userLvl.lavoro = lavoroTrovato.nome
             saveDb(livelliPath, livelliDb)
 
-            const captionScelta = `╭┈  『 ✅ 』 \`lavoro ottenuto\`\n┆  『 💼 』 \`impiego\` ─ *${lavoroTrovato.nome}*\n┆  『 💰 』 \`paga\` ─ *€${lavoroTrovato.paga[0]}-${lavoroTrovato.paga[1]}*\n╰┈➤ 『 🛠️ 』 \`scrivi ${usedPrefix}lavora\``
-            return conn.sendMessage(m.chat, { text: captionScelta }, { quoted: m })
+            let cap = `╭┈➤ 『 ✅ 』 *LAVORO OTTENUTO*\n`
+            cap += `┆  『 💼 』 *IMPIEGO:* ${lavoroTrovato.nome}\n`
+            cap += `┆  『 💰 』 *PAGA:* €${lavoroTrovato.paga[0]}-${lavoroTrovato.paga[1]}\n`
+            cap += `╰┈➤ 『 🛠️ 』 \`scrivi ${usedPrefix}lavora per iniziare\``
+            return m.reply(cap)
         }
     }
 
     if (command === 'lavora') {
-        if (!userLvl.lavoro) return conn.sendMessage(m.chat, { text: `⚠️ Non hai un lavoro! Usa ${usedPrefix}lavoro` }, { quoted: m })
+        if (!userLvl.lavoro) return m.reply(`\`𐔌⚠️꒱\` Non hai un lavoro! Usa ${usedPrefix}lavoro`)
 
-        const baseCooldown = 600000 
+        const baseCooldown = 10 * 60 * 1000 
         const riduzione = userLvl.xp * 100 
         const tempoAttesa = Math.max(60000, baseCooldown - riduzione)
         const ora = Date.now()
@@ -127,12 +117,10 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
         if (ora - lastWork < tempoAttesa) {
             const rimanente = tempoAttesa - (ora - lastWork)
-            return conn.sendMessage(m.chat, { text: `⏳ Sei stanco! Riposa ancora *${formatTime(rimanente)}*` }, { quoted: m })
+            return m.reply(`\`𐔌⏳꒱\` Sei stanco! Riposa ancora *${formatTime(rimanente)}*`)
         }
 
         const lavoroAttuale = lavori.find(l => l.nome === userLvl.lavoro)
-        if (!lavoroAttuale) return conn.sendMessage(m.chat, { text: '❌ Errore nel database lavori.' }, { quoted: m })
-        
         const pagaRandom = getRandom(lavoroAttuale.paga[0], lavoroAttuale.paga[1])
         const xpRandom = getRandom(lavoroAttuale.xpGained[0], lavoroAttuale.xpGained[1])
 
@@ -140,62 +128,35 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
         userLvl.xp += xpRandom
         cooldowns[jid] = ora
 
-        txDb[jid].push({
-            type: 'entrata',
-            amount: pagaRandom,
-            date: ora,
-            description: `Stipendio ${lavoroAttuale.nome}`
-        })
+        txDb[jid].push({ type: 'entrata', amount: pagaRandom, date: ora, description: `Stipendio ${lavoroAttuale.nome}` })
 
         saveDb(livelliPath, livelliDb)
         saveDb(walletPath, walletDb)
         saveDb(cooldownPath, cooldowns)
         saveDb(txPath, txDb)
 
-        const htmlWork = `<html><head><style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
-            body { margin:0; padding:0; width:1000px; height:600px; display:flex; align-items:center; justify-content:center; background:#000; font-family:'Inter', sans-serif; }
-            .work-bg { width:900px; height:500px; background:linear-gradient(45deg, #111, #1a1a1a); border-radius:20px; position:relative; overflow:hidden; border:1px solid #a855f7; }
-            .accent { position:absolute; top:0; left:0; width:10px; height:100%; background:${lavoroAttuale.colore}; }
-            .work-info { padding:80px; }
-            .job-name { color:${lavoroAttuale.colore}; font-size:24px; text-transform:uppercase; letter-spacing:5px; }
-            .work-status { color:#fff; font-size:80px; margin-top:10px; }
-            .earned { color:#00ff88; font-size:120px; margin-top:20px; }
-        </style></head><body>
-            <div class="work-bg">
-                <div class="accent"></div>
-                <div class="work-info">
-                    <div class="job-name">${lavoroAttuale.nome}</div>
-                    <div class="work-status">TURNO COMPLETATO</div>
-                    <div class="earned">+€${pagaRandom.toLocaleString()}</div>
-                </div>
-            </div>
-        </body></html>`
+        let resTxt = `╭┈➤ 『 🛠️ 』 *TURNO COMPLETATO*\n`
+        resTxt += `┆  『 💼 』 *IMPIEGO:* ${lavoroAttuale.nome}\n`
+        resTxt += `┆  『 💰 』 *GUADAGNO:* +${pagaRandom}€\n`
+        resTxt += `┆  『 ✨ 』 *XP:* +${xpRandom}\n`
+        resTxt += `┆  『 🏦 』 *SALDO:* ${walletDb[jid].money}€\n`
+        resTxt += `╰┈➤ 『 📦 』 \`annoyed system\``
 
-        const ssWork = await axios.post(`https://chrome.browserless.io/screenshot?token=${BROWSERLESS_KEY}`, {
-            html: htmlWork, viewport: { width: 1000, height: 600 }, options: { type: 'jpeg', quality: 90 }
-        }, { responseType: 'arraybuffer' })
-
-        const captionLavoro = `╭┈  『 🛠️ 』 \`turno completato\`\n┆  『 💼 』 \`impiego\` ─ *${lavoroAttuale.nome}*\n┆  『 💰 』 \`guadagno\` ─ *+€${pagaRandom}*\n┆  『 ✨ 』 \`xp\` ─ *+${xpRandom}*\n╰┈➤ 『 🏦 』 \`portafoglio\` ─ *€${walletDb[jid].money}*`
-
-        return conn.sendMessage(m.chat, {
-            image: Buffer.from(ssWork.data),
-            caption: captionLavoro
-        }, { quoted: m })
+        return m.reply(resTxt)
     }
 
     if (command === 'licenziati') {
-        if (!userLvl.lavoro) return conn.sendMessage(m.chat, { text: '⚠️ Non hai un impiego da cui dimetterti.' }, { quoted: m })
-        const lavoroPrecedente = userLvl.lavoro
+        if (!userLvl.lavoro) return m.reply('`𐔌⚠️꒱` Non hai un impiego.')
+        const exJob = userLvl.lavoro
         userLvl.lavoro = null
         saveDb(livelliPath, livelliDb)
-        
-        const captionDimissioni = `╭┈  『 🚪 』 \`dimissioni\`\n┆  『 💼 』 \`ex impiego\` ─ *${lavoroPrecedente}*\n╰┈➤ 『 📦 』 \`usa ${usedPrefix}lavoro per ricominciare\``
-        return conn.sendMessage(m.chat, { text: captionDimissioni }, { quoted: m })
+        return m.reply(`╭┈➤ 『 🚪 』 *DIMISSIONI*\n┆  『 💼 』 *EX IMPIEGO:* ${exJob}\n╰┈➤ 『 📦 』 \`ora sei disoccupato\``)
     }
 }
 
 handler.command = ['lavoro', 'lavora', 'licenziati']
 handler.tags = ['rpg']
-handler.help = ['lavoro', 'lavora']
+handler.help = ['lavoro', 'lavora', 'licenziati']
+handler.group = true
+
 export default handler

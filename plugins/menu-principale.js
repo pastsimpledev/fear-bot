@@ -11,7 +11,9 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner }) => {
   let uptime = clockString(_uptime);
   let totalUsers = Object.keys(global.db.data?.users || {}).length;
 
-  let caption = `  
+  let name = m.pushName || (conn.getName ? await conn.getName(m.sender) : m.sender.split('@')[0]);
+
+  let caption = `
 ╭┈  『 🌸 』 \`ciao\` ─  *@${m.sender.split('@')[0]}*
 ┆  『 🕒 』 \`uptime\` ─  *_${uptime}_*
 ┆  『 👥 』 \`utenti\` ─  *_${totalUsers}_*
@@ -21,7 +23,8 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner }) => {
     {
       name: "quick_reply",
       buttonParamsJson: JSON.stringify({ display_text: "🛡️ FUNZIONI", id: `${usedPrefix}funzioni` })
-    },{
+    },
+    {
       name: "quick_reply",
       buttonParamsJson: JSON.stringify({ display_text: "🛡️ ADMIN", id: `${usedPrefix}menuadmin` })
     },
@@ -29,10 +32,10 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner }) => {
       name: "quick_reply",
       buttonParamsJson: JSON.stringify({ display_text: "🎮 GIOCHI", id: `${usedPrefix}menu-giochi` })
     },
-   /* {
+    {
       name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "🚀 SPEED TEST", id: `${usedPrefix}ping` })
-    } */
+      buttonParamsJson: JSON.stringify({ display_text: "👛 PROFILO", id: `${usedPrefix}profilo` })
+    }
   ];
 
   const msg = {
@@ -41,7 +44,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner }) => {
         interactiveMessage: {
           header: { title: "◯  𐙚  *──  m e n u  ──*", hasVideoMessage: false },
           body: { text: caption },
-          footer: { text: "" },
+          footer: { text: "annoyed system" },
           nativeFlowMessage: { buttons: buttons },
           contextInfo: {
             ...global.newsletter().contextInfo,
@@ -51,8 +54,8 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner }) => {
             participant: '0@s.whatsapp.net',
             quotedMessage: {
                 contactMessage: {
-                    displayName: `${m.sender.split('@')[0]}`,
-                    vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;annoyed;;;\nFN:annoyed\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nEND:VCARD`
+                    displayName: name,
+                    vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;${name};;;\nFN:${name}\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nEND:VCARD`
                 }
             }
           }

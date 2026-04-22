@@ -1,33 +1,38 @@
 import fs from 'fs'
 
 const transactionPath = './media/transazioni.json'
+const walletPath = './media/wallet.json'
 
-const loadTransactions = () => {
+const getWallet = () => {
+    if (!fs.existsSync(walletPath)) return {}
     try {
-        if (!fs.existsSync(transactionPath)) return []
-        return JSON.parse(fs.readFileSync(transactionPath, 'utf-8'))
-    } catch {
-        return []
-    }
+        return JSON.parse(fs.readFileSync(walletPath, 'utf-8'))
+    } catch { return {} }
+}
+
+const saveWallet = (data) => {
+    fs.writeFileSync(walletPath, JSON.stringify(data, null, 2))
 }
 
 const saveTransaction = (jid, amount, type) => {
-    let logs = loadTransactions()
-    const newLog = {
-        jid,
-        amount,
-        type,
-        timestamp: Date.now(),
-        date: new Date().toLocaleString('it-IT')
-    }
-    logs.push(newLog)
-    fs.writeFileSync(transactionPath, JSON.stringify(logs, null, 2))
+    try {
+        if (!fs.existsSync('./media')) fs.mkdirSync('./media')
+        let logs = fs.existsSync(transactionPath) ? JSON.parse(fs.readFileSync(transactionPath, 'utf-8')) : []
+        logs.push({
+            jid,
+            amount,
+            type,
+            timestamp: Date.now(),
+            date: new Date().toLocaleString('it-IT')
+        })
+        fs.writeFileSync(transactionPath, JSON.stringify(logs, null, 2))
+    } catch (e) { console.error(e) }
 }
 
 let handler = m => m
 
 handler.before = async function (m, { conn }) {
-    if (!m.sender || m.key.fromMe) return !0
+    if (!m.sender || m.key.fromMe || m.isBaileys) return !0
 
     let user = global.db.data.users[m.sender]
     if (!user || !user.messages) return !0
@@ -36,16 +41,40 @@ handler.before = async function (m, { conn }) {
     const reward = 450
 
     if (user.messages > 0 && user.messages % threshold === 0) {
-        user.money = (user.money || 0) + reward
+        let walletDb = getWallet()
         
+        if (!walletDb[m.sender]) walletDb[m.sender] = { money: 0, bank: 0, lastFree: 0 }
+        
+        walletDb[m.sender].money += reward
+        
+        saveWallet(walletDb)
         saveTransaction(m.sender, reward, 'PREMIO_MESSAGGI')
         
-        let testo = `@${m.sender.split('@')[0]} hai raggiunto  *${user.messages}* messaggi!\nTi sono stati accreditati *${reward}€* sul saldo. 🎉`
+        let testo = `_🎊 *Congratulazioni* @${m.sender.split('@')[0]}! Hai raggiunto gli *${user.messages}* messaggi. Ho aggiunto ${reward}€ al tuo saldo!_ \n\n> Continua a chattare per altro denaro! 💸`
 
-        await conn.sendMessage(m.chat, {
-            text: testo,
-            mentions: [m.sender]
-        }, { quoted: m })
+        const msg = {
+            viewOnceMessage: {
+                message: {
+                    interactiveMessage: {
+                        body: { text: testo },
+                        nativeFlowMessage: {
+                            buttons: [
+                                {
+                                    name: "quick_reply",
+                                    buttonParamsJson: JSON.stringify({ display_text: "👛 VEDI SALDO", id: `.wallet` })
+                                }
+                            ]
+                        },
+                        contextInfo: {
+                            mentionedJid: [m.sender],
+                            isForwarded: true
+                        }
+                    }
+                }
+            }
+        }
+
+        await conn.relayMessage(m.chat, msg, { quoted: m })
     }
 
     return !0

@@ -1,16 +1,15 @@
 const handler = async (m, { conn }) => {
-    const chatsDb = global.db.data.chats || {}
+    const groupsDb = global.db.data.groups || {}
     const pfpDefault = 'https://i.ibb.co/6fs5B1V/triplo3.jpg'
     
-    const allGroups = Object.entries(chatsDb)
-        .filter(([id, data]) => id.endsWith('@g.us'))
+    const allGroups = Object.entries(groupsDb)
         .sort((a, b) => (b[1].messages || 0) - (a[1].messages || 0))
         .slice(0, 5)
 
     if (allGroups.length === 0) return m.reply('🏮 ╰┈➤ Nessun dato disponibile per i gruppi.')
 
-    const totalMsgsGlobal = Object.values(chatsDb)
-        .reduce((acc, chat) => acc + (chat.messages || 0), 0)
+    const totalMsgsGlobal = Object.values(groupsDb)
+        .reduce((acc, group) => acc + (group.messages || 0), 0)
 
     const dataOggi = new Date().toLocaleDateString('it-IT', { 
         day: '2-digit', 
@@ -23,11 +22,12 @@ const handler = async (m, { conn }) => {
     for (let i = 0; i < allGroups.length; i++) {
         const [id, data] = allGroups[i]
         let groupName = 'Gruppo Sconosciuto'
+        
         try {
             const meta = await conn.groupMetadata(id)
             groupName = meta.subject
         } catch {
-            groupName = data.subject || 'Ex Gruppo'
+            groupName = `Gruppo: ${id.split('@')[0]}`
         }
         
         const msgs = data.messages || 0
@@ -57,7 +57,7 @@ const handler = async (m, { conn }) => {
             },
             externalAdReply: {
                 title: `Classifica Globale Gruppi`,
-                body: `📧 - ${totalMsgsGlobal} messaggi totali nel bot`,
+                body: `📧 - ${totalMsgsGlobal} messaggi totali registrati`,
                 thumbnailUrl: currentGroupPfp,
                 sourceUrl: global.canale.link,
                 mediaType: 1,

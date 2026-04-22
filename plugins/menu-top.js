@@ -10,8 +10,14 @@ let handler = async (m, { conn, usedPrefix }) => {
         {
             name: 'quick_reply',
             buttonParamsJson: JSON.stringify({
-                display_text: '👥 TOP MESSAGGI (GRUPPO)',
-                id: `${usedPrefix}topmsgc`
+                display_text: '👤 TOP MESSAGGI (GRUPPO)',
+                id: `${usedPrefix}topmessaggi gruppo`
+            })
+        },{
+            name: 'quick_reply',
+            buttonParamsJson: JSON.stringify({
+                display_text: '👥 TOP MESSAGGI (GRUPPI)',
+                id: `${usedPrefix}topgruppi`
             })
         },
         {
@@ -19,13 +25,6 @@ let handler = async (m, { conn, usedPrefix }) => {
             buttonParamsJson: JSON.stringify({
                 display_text: '💰 TOP DENARO (GLOBALE)',
                 id: `${usedPrefix}topeuro`
-            })
-        },
-        {
-            name: 'quick_reply',
-            buttonParamsJson: JSON.stringify({
-                display_text: '🏛️ TOP DENARO (GRUPPO)',
-                id: `${usedPrefix}topeurgc`
             })
         }
     ]

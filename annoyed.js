@@ -90,7 +90,7 @@ async function startBot() {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
-        browser: Browsers.macOS('Safari'),
+        browser: Browsers.macOS('Firefox'),
         generateHighQualityLinkPreview: true,
         syncFullHistory: false,
         shouldSyncHistoryMessage: () => false,

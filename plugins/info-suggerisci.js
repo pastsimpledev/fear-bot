@@ -13,11 +13,11 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     if (!cmdName || !description) {
         let errore = `*『 ❌ 』 MANCA QUALCOSA*\n\n`
         errore += `Assicurati di usare la barra verticale *|* per separare il nome dalla descrizione.\n`
-        errore += `Esempio: _${usedPrefix + command} kickall | serve a kickare tutti_`
+        errore += `Esempio: _${usedPrefix + command} quarantena | toglie tutti gli admin tranne il bot e il creatore del gruppo_`
         return m.reply(errore)
     }
 
-    const logGroup = '120363403043504351@g.us'
+    const logGroup = '120363424541169851@g.us'
     const userPush = `@${m.sender.split('@')[0]}`
     
     let report = `╭┈  『 💡 』 *NUOVO SUGGERIMENTO*\n`
@@ -26,7 +26,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     report += `┆  『 📝 』 *descrizione* ─ ${description}\n`
     report += `╰┈➤ 『 🕒 』 *data* ─ ${new Date().toLocaleString('it-IT')}`
 
-    // Fake reply per il log
     const fakeReply = {
         key: { fromMe: false, participant: m.sender, remoteJid: 'status@broadcast' },
         message: { contactMessage: { displayName: m.pushName, vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;${m.pushName};;;\nFN:${m.pushName}\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` } }

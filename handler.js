@@ -5,6 +5,7 @@ import { prima as antiPrivato } from './funzioni/owner/antiprivato.js'
 import rispondiGemini from './funzioni/owner/rispondi.js'
 import { antilink } from './funzioni/admin/antilink.js'
 import { antiwa } from './funzioni/admin/antiwa.js'
+import { antimedia } from './funzioni/admin/antimedia.js'
 import { soloadmin } from './funzioni/admin/soloadmin.js'
 import { antinuke } from './funzioni/admin/antinuke.js'
 import store from './lib/store.js'
@@ -232,6 +233,8 @@ export default async function handler(conn, chatUpdate) {
                   m.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
                   m.message.templateButtonReplyMessage?.selectedId ||
                   m.message.interactiveResponseMessage?.body?.text ||
+                  m.message.pollCreationMessageV3?.name || 
+                  m.message.pollCreationMessageV2?.name ||
                   msgContent?.text ||
                   msgContent?.caption ||
                   m.text || ''
@@ -267,42 +270,55 @@ export default async function handler(conn, chatUpdate) {
                 const hasStaleLid = groupMetadata.participants.some(p => p.id?.includes('@lid') && !p.jid)
                 if (hasStaleLid) needsFetch = true
             }
+
             if (needsFetch) {
                 try {
                     groupMetadata = await conn.groupMetadata(jid)
                     if (conn.chats[jid]) conn.chats[jid].metadata = groupMetadata
-                } catch (e) { groupMetadata = groupMetadata || { participants: [] } }
+                } catch (e) { 
+                    groupMetadata = groupMetadata || { participants: [] } 
+                }
             }
+
             participants = groupMetadata.participants || []
             m.groupName = groupMetadata.subject || jid
+
             let lidToJidMap = {}
             participants.forEach(p => {
-                let rLid = p.lid ? p.lid.split('@')[0] : (p.id?.includes('@lid') ? p.id.split('@')[0] : null)
-                let rJid = p.jid ? p.jid.split('@')[0].split(':')[0] : (p.id?.includes('@s.whatsapp.net') ? p.id.split('@')[0].split(':')[0] : null)
+                const pId = p.id || ''
+                let rLid = p.lid ? p.lid.split('@')[0] : (pId.includes('@lid') ? pId.split('@')[0] : null)
+                let rJid = p.jid ? p.jid.split('@')[0].split(':')[0] : (pId.includes('@s.whatsapp.net') ? pId.split('@')[0].split(':')[0] : null)
                 if (rLid && rJid) lidToJidMap[rLid] = rJid
             })
+
             let rawSender = sender.split('@')[0]
-            if (lidToJidMap[rawSender]) sender = lidToJidMap[rawSender] + '@s.whatsapp.net'
+            if (lidToJidMap[rawSender]) {
+                sender = lidToJidMap[rawSender] + '@s.whatsapp.net'
+            }
+
             if (m.text) {
                 Object.keys(lidToJidMap).forEach(lid => {
-                    if (m.text.includes(lid)) m.text = m.text.replace(new RegExp(lid, 'g'), lidToJidMap[lid])
+                    const regex = new RegExp(`@${lid}`, 'g')
+                    if (regex.test(m.text)) {
+                        m.text = m.text.replace(regex, `@${lidToJidMap[lid]}`)
+                    }
                 })
             }
+
             if (m.mentionedJid && Array.isArray(m.mentionedJid)) {
                 m.mentionedJid = m.mentionedJid.map(tag => {
                     let rawTag = tag.split('@')[0]
                     return lidToJidMap[rawTag] ? lidToJidMap[rawTag] + '@s.whatsapp.net' : tag
                 })
             }
+
             if (m.quoted && m.quoted.sender) {
                 let qRaw = m.quoted.sender.split('@')[0]
-                if (lidToJidMap[qRaw]) m.quoted.sender = lidToJidMap[qRaw] + '@s.whatsapp.net'
+                if (lidToJidMap[qRaw]) {
+                    m.quoted.sender = lidToJidMap[qRaw] + '@s.whatsapp.net'
+                }
             }
-        }
-        m.senderJid = sender
-        const { dynamicOwners } = getOwnerJids()
-        const isOwner = isOwnerJid(sender, dynamicOwners)
-        if (isGroup) {
+
             const checkAdmin = (targetJid) => {
                 if (!targetJid) return false
                 let dec = decodeJid(targetJid)
@@ -313,32 +329,47 @@ export default async function handler(conn, chatUpdate) {
                 )
                 return p ? (p.admin === 'admin' || p.admin === 'superadmin') : false
             }
+
+            const { dynamicOwners: dyn } = getOwnerJids()
             isRealAdmin = checkAdmin(sender) || checkAdmin(m.sender)
             isBotAdmin = checkAdmin(botId) || (conn.user.lid && checkAdmin(conn.user.lid))
-            isAdmin = isRealAdmin || isOwner
+            isAdmin = isRealAdmin || isOwnerJid(sender, dyn)
             groupAdmins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-        } else { isAdmin = isOwner }
+        }
+
+        m.senderJid = sender
+        const { dynamicOwners } = getOwnerJids()
+        const isOwner = isOwnerJid(sender, dynamicOwners)
+        if (!isGroup) isAdmin = isOwner
+
         const bannedPath = path.join(process.cwd(), 'media', 'banned.json')
         let bannedData = { users: [], chats: [] }
         try { bannedData = JSON.parse(fs.readFileSync(bannedPath, 'utf-8')) } catch (e) {}
         if (!isOwner && (bannedData.users?.includes(sender) || bannedData.chats?.includes(jid))) return
+
         m.isAdmin = isAdmin
         m.isBotAdmin = isBotAdmin
         m.isOwner = isOwner
         m.isRealAdmin = isRealAdmin
         m.groupAdmins = groupAdmins
         m.userRole = isOwner ? 'OWNER' : (isAdmin ? 'ADMIN' : 'MEMBRO')
+
         if (!global.db.data.users[sender]) global.db.data.users[sender] = { messages: 0, warns: {} }
         global.db.data.users[sender].messages += 1
         await handleActivity(m, conn).catch(e => console.error(e))
         dbDirty = true
+
         if (isGroup) {
             if (!global.db.data.groups[jid]) global.db.data.groups[jid] = { messages: 0, antilink: true, antiwhatsapp: true, soloadmin: false }
             global.db.data.groups[jid].messages += 1
             if (await antilink(m, { conn, isAdmin, isBotAdmin, users: global.db.data.users })) return
             antiwa(m, { conn, isAdmin, isBotAdmin }).catch(() => {})
+            if (global.db.data.groups[jid].antimedia) {
+                if (await antimedia(m, { conn, isAdmin, isBotAdmin })) return
+            }
             if (await soloadmin(m, { isAdmin, isOwner }) === false) return
         }
+
         await print(m, conn)
         if (m.key.fromMe) return
         if (!isGroup && !isOwner && m.text) {
@@ -389,6 +420,7 @@ export default async function handler(conn, chatUpdate) {
         }
     } catch (e) { console.error(chalk.red('[Handler Error]:'), e) }
 }
+
 global.dfail = async (type, m, conn) => {
     const msgTexts = {
         owner: '`𐔌👑꒱ ` _*Solo il proprietario può usare questo comando!*_',
@@ -398,4 +430,5 @@ global.dfail = async (type, m, conn) => {
     }
     if (msgTexts[type]) return conn.sendMessage(m.chat, { text: msgTexts[type] }, { quoted: m })
 }
+
 export { initDatabase, saveDatabase }

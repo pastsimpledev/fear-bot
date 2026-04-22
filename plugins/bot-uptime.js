@@ -2,13 +2,16 @@ let handler = async (m, { conn }) => {
     let _uptime = process.uptime() * 1000
     let uptime = clockString(_uptime)
     
+    const newsletterData = typeof global.newsletter === 'function' ? global.newsletter() : { contextInfo: {} }
+    const newsletterJid = newsletterData?.contextInfo?.forwardedNewsletterMessageInfo?.newsletterJid || "120363305149340738@newsletter"
+
     let message = {
         interactiveMessage: {
             body: {
                 text: `『 🕒 』 *UPTIME* ─ *${uptime}*`
             },
             footer: {
-                text: "annoyed System"
+                text: ""
             },
             header: {
                 hasMediaAttachment: false
@@ -23,21 +26,21 @@ let handler = async (m, { conn }) => {
                             merchant_url: `https://wa.me/${global.owner[0][0]}`
                         })
                     }
-                ]
+                ],
+                messageParamsJson: ""
             },
             contextInfo: {
                 isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: global.newsletter,
-                    newsletterName: "annoyed Update",
-                    serverMessageId: -1
-                },
                 forwardingScore: 999
             }
         }
     }
 
-    await conn.relayMessage(m.chat, { viewOnceMessage: { message } }, { quoted: m })
+    await conn.relayMessage(m.chat, { 
+        viewOnceMessage: { 
+            message: message 
+        } 
+    }, { quoted: m })
 }
 
 handler.help = ['uptime']

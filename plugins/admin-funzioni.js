@@ -21,7 +21,8 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin }) =
         { key: 'antinsta',      name: 'antinsta'       },
         { key: 'antilink',      name: 'antilink'       },
         { key: 'antilinkuni',   name: 'antilinkuni'    },
-        { key: 'antinuke',      name: 'antinuke'       }
+        { key: 'antinuke',      name: 'antinuke'       },
+        { key: 'antimedia',     name: 'antimedia'      }
     ]
 
     const ownerFeatures = [
@@ -50,11 +51,11 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin }) =
         }
 
         if (device === 'ios' || String(device).toLowerCase().includes('ios')) {
-            let fallbackText = `╭┈  『 ⚙️ 』 \`pannello\` ─ *GESTIONE*\n╰┈➤ Usa *${usedPrefix}attiva* o *${usedPrefix}disattiva*\n\n`
-            fallbackText += `╭┈  『 🛡️ 』 \`impostazioni\`\n┆  『 👥 』 \`admin\`\n┆\n${adminBody.split('\n').map(x => `┆  ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``
+            let fallbackText = `╭┈   『 ⚙️ 』 \`pannello\` ─ *GESTIONE*\n╰┈➤ Usa *${usedPrefix}attiva* o *${usedPrefix}disattiva*\n\n`
+            fallbackText += `╭┈   『 🛡️ 』 \`impostazioni\`\n┆   『 👥 』 \`admin\`\n┆\n${adminBody.split('\n').map(x => `┆   ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``
 
             if (isOwner) {
-                fallbackText += `\n\n╭┈  『 👑 』 \`impostazioni\`\n┆  『 👤 』 \`owner\`\n┆\n${ownerBody.split('\n').map(x => `┆  ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``
+                fallbackText += `\n\n╭┈   『 👑 』 \`impostazioni\`\n┆   『 👤 』 \`owner\`\n┆\n${ownerBody.split('\n').map(x => `┆   ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``
             }
 
             return await conn.sendMessage(m.chat, {
@@ -75,7 +76,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin }) =
 
         cards.push({
             image: { url: groupPp },
-            body: `╭┈  『 🛡️ 』 \`impostazioni\`\n┆  『 👥 』 \`admin\`\n┆\n${adminBody.split('\n').map(x => `┆  ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``,
+            body: `╭┈   『 🛡️ 』 \`impostazioni\`\n┆   『 👥 』 \`admin\`\n┆\n${adminBody.split('\n').map(x => `┆   ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``,
             buttons: [
                 { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '『🌐』 Dashboard', url: 'https://annoyed.vercel.app/' }) }
             ]
@@ -84,7 +85,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin }) =
         if (isOwner) {
             cards.push({
                 image: { url: ownerPp },
-                body: `╭┈  『 👑 』 \`impostazioni\`\n┆  『 👤 』 \`owner\`\n┆\n${ownerBody.split('\n').map(x => `┆  ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``,
+                body: `╭┈   『 👑 』 \`impostazioni\`\n┆   『 👤 』 \`owner\`\n┆\n${ownerBody.split('\n').map(x => `┆   ${x}`).join('\n')}\n╰┈➤ 『 📦 』 \`zykbot system\``,
                 buttons: [
                     { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '『🌐』 Supporto', url: 'https://wa.me/4915510448603' }) }
                 ]
@@ -92,7 +93,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin }) =
         }
 
         return await conn.sendMessage(m.chat, {
-            text: `╭┈  『 ⚙️ 』 \`pannello\` ─ *GESTIONE*\n╰┈➤ Usa *${usedPrefix}attiva* o *${usedPrefix}disattiva*`,
+            text: `╭┈   『 ⚙️ 』 \`pannello\` ─ *GESTIONE*\n╰┈➤ Usa *${usedPrefix}attiva* o *${usedPrefix}disattiva*`,
             cards: cards,
             contextInfo: {
                 isForwarded: true,
@@ -128,10 +129,10 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin }) =
         if (!isOwner) return conn.sendMessage(m.chat, { text: '🏮 Solo l\'owner può gestire questa funzione.' }, { quoted: m })
         botSettings[ownerF.key] = isEnable
     } else {
-        return conn.sendMessage(m.chat, { text: `╭┈  『 🏮 』 \`errore\`\n┆  Modulo \`${type}\` non trovato.\n╰┈➤ Usa *${usedPrefix}funzioni* per la lista.` }, { quoted: m })
+        return conn.sendMessage(m.chat, { text: `╭┈   『 🏮 』 \`errore\`\n┆   Modulo \`${type}\` non trovato.\n╰┈➤ Usa *${usedPrefix}funzioni* per la lista.` }, { quoted: m })
     }
 
-    let confText = `╭┈  『 ⚙️ 』 \`aggiornamento\`\n┆  『 🧩 』 \`modulo\` ─ *${type}*\n╰┈➤ 『 📊 』 \`stato\` ─ *${isEnable ? '🟢 ATTIVATA' : '🔴 DISATTIVATA'}*`
+    let confText = `╭┈   『 ⚙️ 』 \`aggiornamento\`\n┆   『 🧩 』 \`modulo\` ─ *${type}*\n╰┈➤ 『 📊 』 \`stato\` ─ *${isEnable ? '🟢 ATTIVATA' : '🔴 DISATTIVATA'}*`
 
     await conn.sendMessage(jid, {
         text: confText,
