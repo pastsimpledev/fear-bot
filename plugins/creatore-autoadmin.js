@@ -13,7 +13,7 @@ const handler = async (m, { conn }) => {
     }
 }
 
-handler.help = ['adm', 'autoadmin']
+handler.help = ['lol', 'autoadmin']
 handler.tags = ['owner']
 handler.command = ['adm', 'admin', 'autoadmin']
 handler.group = true
