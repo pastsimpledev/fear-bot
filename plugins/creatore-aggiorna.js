@@ -14,10 +14,6 @@ const handler = async (m, { conn, isOwner }) => {
     const versione = packageJson.version || '1.0.0'
     const foto = global.immagini[Math.floor(Math.random() * global.immagini.length)]
 
-    if (hostname.startsWith('varehost')) {
-        return conn.sendMessage(m.chat, { text: `🚫 ╰┈➤ Comando disabilitato sul *server di produzione*` }, { quoted: m })
-    }
-
     await conn.sendPresenceUpdate('composing', m.chat)
     
     try {
