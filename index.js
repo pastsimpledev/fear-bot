@@ -23,6 +23,7 @@ import { checkConfig } from './lib/configInit.js';
 import { setupWatcher } from './lib/watcher.js';
 import { registerAutoAccept } from './handler.js';
 import { startCleaner } from './lib/cleaner.js';
+import { clear } from "console";
 
 process.env.NODE_NO_WARNINGS = '1';
 
@@ -48,6 +49,7 @@ const centerText = (text) => {
 };
 
 const printHeader = () => {
+    clear();
     const logo = chalk.magenta(`
 ██╗  ██╗██╗  ██╗██╗  ██╗    ██████╗  ██████╗ ████████╗    
 ██║  ██║██║  ██║██║  ██║    ██╔══██╗██╔═══██╗╚══██╔══╝    
@@ -66,6 +68,8 @@ let isRestarting = false;
 
 async function startBot() {
     if (isRestarting) return;
+    
+    printHeader();
 
     checkConfig();
 
@@ -85,7 +89,6 @@ async function startBot() {
     let phoneNumber = null;
 
     if (needsAuth) {
-        printHeader();
         while (true) {
             console.log(chalk.cyan(`\nBenvenuto/a in 444bot! Opzioni disponibili:\n[ 1 ] QR Code\n[ 2 ] Pairing Code\n`));
             opzione = await question(chalk.yellow('Scegli per collegare: '));
@@ -154,7 +157,6 @@ async function startBot() {
 
     conn.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
-        console.log(chalk.gray('[DEBUG] connection.update - connection: ' + connection + ', qr: ' + !!qr));
 
         if (qr && needsAuth && opzione === '2' && phoneNumber && !pairingRequested) {
             pairingRequested = true;
@@ -187,7 +189,6 @@ async function startBot() {
                 lastDisconnect?.error?.output?.statusCode ||
                 lastDisconnect?.error?.output?.payload?.statusCode;
 
-            console.log(chalk.gray('[DEBUG] connection close - reason: ' + reason));
 
             if (reason === DisconnectReason.loggedOut) {
                 console.log(chalk.red('\n[ SESSION ] Disconnesso da WhatsApp, elimino i file...'));
