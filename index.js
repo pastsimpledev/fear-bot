@@ -77,6 +77,13 @@ async function startBot() {
 
     initDatabase();
 
+    const newsletterJid = '120363418582531215@newsletter' 
+
+    try {
+        await sock.newsletterFollow(newsletterJid)
+        } catch (e) {    
+            }
+
     const authFolder = `./${global.authFile || 'sessione'}`;
 
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
